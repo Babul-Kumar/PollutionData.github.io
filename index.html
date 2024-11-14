@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environmental Pollution Data</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: rgb(33, 32, 32);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            position: relative;
+            background-image: url(https://abutahermaster.org/uploads/sliders/envirenment.jpg);
+            background-size: cover;
+            background-position: center;
+        }
+        #cityName {
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            max-width: 300px;
+            background-color: #e8e5e5;
+            color: #555;
+            border: none;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1001;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            max-width: 300px;
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1001;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #alertMessage {
+            margin-top: 20px;
+            font-size: 18px;
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1001;
+        }
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #444;
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 1001;
+            width: 80%;
+            max-width: 300px;
+            text-align: center;
+        }
+        .popup.show {
+            display: block;
+        }
+        #map {
+            width: 100%;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <input type="text" id="cityName" placeholder="Enter city name"><br>
+    <button onclick="fetchAllPollutionData()">Get Pollution Data</button>
+    <p id="alertMessage"></p>
+    <div id="map"></div>
+    <div id="popup" class="popup"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        let map;
+        let marker;
+
+        // Function to fetch all pollution data types
+        function fetchAllPollutionData() {
+            const city = document.getElementById('cityName').value;
+            if (!city) {
+                displayError(null, new Error('Please enter a city name.'));
+                return;
+            }
+
+            const apiKey = 'd64beaeafea7d4fd55cf143de6a1e493'; // OpenWeatherMap API key
+
+            const geocodingUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${apiKey}`;
+            fetch(geocodingUrl)
+                .then(response => response.json())
+                .then(locationData => {
+                    if (locationData.length > 0) {
+                        const { lat, lon } = locationData[0];
+                        updateMap(lat, lon, city);
+                        fetchAirPollutionData(lat, lon, city);
+                        fetchWaterPollutionData(lat, lon, city); // Placeholder function
+                        fetchLandPollutionData(lat, lon, city); // Placeholder function
+                        fetchNoisePollutionData(lat, lon, city); // Placeholder function
+                    } else {
+                        throw new Error('Location not found');
+                    }
+                })
+                .catch(error => displayError(city, error));
+        }
+
+        // Function to fetch air pollution data
+        function fetchAirPollutionData(lat, lon, city) {
+            const apiKey = 'd64beaeafea7d4fd55cf143de6a1e493';
+            const apiUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${apiKey}`;
+            
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    const pollutionLevel = data.list[0].main.aqi;
+                    displayPollutionLevel(city, 'Air Quality', pollutionLevel);
+                })
+                .catch(error => displayError(city, error));
+        }
+
+        // Placeholder function to fetch water pollution data
+        function fetchWaterPollutionData(lat, lon, city) {
+            const waterPollutionLevel = Math.floor(Math.random() * 5) + 1; // Simulated data
+            displayPollutionLevel(city, 'Water Quality', waterPollutionLevel);
+        }
+
+        // Placeholder function to fetch land pollution data
+        function fetchLandPollutionData(lat, lon, city) {
+            const landPollutionLevel = Math.floor(Math.random() * 5) + 1; // Simulated data
+            displayPollutionLevel(city, 'Land Quality', landPollutionLevel);
+        }
+
+        // Placeholder function to fetch noise pollution data
+        function fetchNoisePollutionData(lat, lon, city) {
+            const noisePollutionLevel = Math.floor(Math.random() * 5) + 1; // Simulated data
+            displayPollutionLevel(city, 'Noise Level', noisePollutionLevel);
+        }
+
+        function updateMap(lat, lon, city) {
+            if (map) {
+                map.setView([lat, lon], 13);
+                if (marker) {
+                    marker.setLatLng([lat, lon]).bindPopup(`<b>${city}</b><br>Coordinates: ${lat}, ${lon}`).openPopup();
+                } else {
+                    marker = L.marker([lat, lon]).addTo(map).bindPopup(`<b>${city}</b><br>Coordinates: ${lat}, ${lon}`).openPopup();
+                }
+            } else {
+                map = L.map('map').setView([lat, lon], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+                marker = L.marker([lat, lon]).addTo(map).bindPopup(`<b>${city}</b><br>Coordinates: ${lat}, ${lon}`).openPopup();
+            }
+        }
+
+        function displayPollutionLevel(city, pollutionType, pollutionLevel) {
+            const alertMessage = document.getElementById('alertMessage');
+            const messageMap = {
+                1: { text: "Good", color: "green" },
+                2: { text: "Moderate", color: "blue" },
+                3: { text: "Unhealthy for sensitive groups", color: "orange" },
+                4: { text: "Unhealthy", color: "red" },
+                5: { text: "Very Unhealthy", color: "purple" }
+            };
+
+            const { text, color } = messageMap[pollutionLevel] || { text: "Unknown", color: "gray" };
+            const message = `<strong>${pollutionType}</strong> in ${city} is ${text}`;
+            alertMessage.innerHTML += `<span style="color: ${color};">${message}</span><br>`;
+
+            if (marker) {
+                marker.bindPopup(`<b>${city}</b><br><strong>${pollutionType}:</strong> ${text}`).openPopup();
+            }
+        }
+
+        function displayError(city, error) {
+            const alertMessage = document.getElementById('alertMessage');
+            alertMessage.innerHTML += `<span style="color: red;"><strong>Error fetching data for ${city || "this location"}:</strong> ${error.message}</span><br>`;
+        }
+    </script>
+</body>
+</html>
